@@ -23,6 +23,6 @@ function generateTickets(count: number) {
   return tickets;
 }
 
-const tickets = generateTickets(20000);
+const tickets = generateTickets(200);
 
 export default tickets;
