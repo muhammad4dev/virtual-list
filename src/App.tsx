@@ -1,4 +1,6 @@
+import { useRef } from "react";
 import "./App.css";
+import { useVirtualizedList } from "./hooks/useVirtualizedList";
 import tickets from "./utils/fakerData";
 
 const tableStyles = {
@@ -13,6 +15,8 @@ const tableStyles = {
   thead: {
     backgroundColor: "#007bff",
     color: "white",
+    position: "sticky",
+    top: 0,
   },
   th: {
     padding: "10px",
@@ -20,80 +24,101 @@ const tableStyles = {
     height: "50px",
   },
   tbodyTr: {
-    height: "35px", // Fixed height
-    borderBottom: "1px solid #ddd",
+    height: "30px",
+    lineHeight: "30px",
   },
   tbodyTrEven: {
     backgroundColor: "#f2f2f2",
   },
-  tr: {
-    lineHeight: "35px",
-  },
   td: {
     padding: "8px",
     color: "black",
-    height: "35px", // Fixed height
-    overflow: "hidden", // Ensure content is clipped
-    textOverflow: "ellipsis", // Show ellipsis for overflowing text
-    whiteSpace: "nowrap", // Prevent wrapping
-    position: "relative", // For absolute positioning of tooltip
-  },
-  tooltipContainer: {
-    position: "relative",
-  },
-  tooltip: {
-    visibility: "hidden",
-    position: "absolute",
-    zIndex: "1",
-    top: "100%",
-    left: "0",
-    backgroundColor: "white",
-    border: "1px solid #ddd",
-    padding: "10px",
-    boxShadow: "0 2px 5px rgba(0,0,0,0.2)",
-    whiteSpace: "normal",
-    wordWrap: "break-word",
-    maxWidth: "300px",
-  },
-  tdHover: {
-    overflow: "visible",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
   },
 };
 
-function TicketTable() {
+function SpacerRow({ height }: { height: number }) {
+  return height > 0 ? <tr style={{ height }} /> : null;
+}
+
+function App() {
+  const rowHeight = 30;
+  const containerHeight = 600;
+
+  const tableContainerRef = useRef<HTMLDivElement>(null);
+  const { visibleItems, offsetTop, offsetBottom, handleScroll } =
+    useVirtualizedList({
+      items: tickets,
+      itemHeight: rowHeight,
+      containerHeight,
+    });
+
+  const onScroll = () => {
+    if (tableContainerRef.current) {
+      handleScroll(tableContainerRef.current.scrollTop);
+    }
+  };
+
   return (
-    <table style={tableStyles.table}>
-      <thead style={tableStyles.thead}>
-        <tr>
-          <th style={tableStyles.th}>Id</th>
-          <th style={tableStyles.th}>Subject</th>
-          <th style={tableStyles.th}>Priority</th>
-          <th style={tableStyles.th}>Status</th>
-          <th style={tableStyles.th}>Description</th>
-          <th style={tableStyles.th}>Assigned To</th>
-          <th style={tableStyles.th}>Created At</th>
-        </tr>
-      </thead>
-      <tbody>
-        {tickets.map((ticket, index) => (
-          <tr
-            key={ticket.id}
-            style={
-              index % 2 === 0 ? tableStyles.tbodyTrEven : tableStyles.tbodyTr
-            }
-          >
-            <td style={tableStyles.td}>{ticket.id}</td>
-            <td style={tableStyles.td}>{ticket.subject}</td>
-            <td style={tableStyles.td}>{ticket.priority}</td>
-            <td style={tableStyles.td}>{ticket.status}</td>
-            <td style={tableStyles.td}>{ticket.description}</td>
-            <td style={tableStyles.td}>{ticket.assignedTo}</td>
-            <td style={tableStyles.td}>{ticket.createdAt}</td>
+    <div
+      ref={tableContainerRef}
+      onScroll={onScroll}
+      style={{
+        overflow: "auto",
+        height: containerHeight,
+        border: "1px solid #ccc",
+      }}
+    >
+      <table style={tableStyles.table as React.CSSProperties}>
+        <thead style={tableStyles.thead as React.CSSProperties}>
+          <tr>
+            {[
+              "Subject",
+              "Priority",
+              "Status",
+              "Description",
+              "Assigned To",
+              "Created At",
+            ].map((header) => (
+              <th key={header} style={tableStyles.th}>
+                {header}
+              </th>
+            ))}
           </tr>
-        ))}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {/* Spacer row to offset the top */}
+          <SpacerRow height={offsetTop} />
+          {visibleItems.map((ticket, index) => (
+            <tr
+              key={ticket.id}
+              style={{
+                ...tableStyles.tbodyTr,
+                ...(index % 2 === 0 ? tableStyles.tbodyTrEven : {}),
+              }}
+            >
+              {[
+                ticket.subject,
+                ticket.priority,
+                ticket.status,
+                ticket.description,
+                ticket.assignedTo,
+                ticket.createdAt,
+              ].map((cell) => (
+                <td key={cell} style={tableStyles.td}>
+                  {cell}
+                </td>
+              ))}
+            </tr>
+          ))}
+          {/* Spacer row to offset the bottom */}
+          <SpacerRow height={offsetBottom} />
+        </tbody>
+      </table>
+    </div>
   );
 }
 
-export default TicketTable;
+export default App;
