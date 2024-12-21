@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef } from "react";
 import "./App.css";
 import { useVirtualizedList } from "./hooks/useVirtualizedList";
 import tickets from "./utils/fakerData";
@@ -46,22 +46,24 @@ function SpacerRow({ height }: { height: number }) {
 }
 
 function App() {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [searchKey, setSearchKey] = useState<keyof Ticket>();
-
   const rowHeight = 30;
   const containerHeight = 600;
 
   const tableContainerRef = useRef<HTMLDivElement>(null);
 
-  const { visibleItems, offsetTop, offsetBottom, handleScroll, filteredItems } =
-    useVirtualizedList({
-      items: tickets,
-      itemHeight: rowHeight,
-      containerHeight,
-      searchQuery,
-      searchKey,
-    });
+  const {
+    visibleItems,
+    offsetTop,
+    offsetBottom,
+    filteredItems,
+    handleScroll,
+    updateSearchKey,
+    updateSearchQuery,
+  } = useVirtualizedList({
+    items: tickets,
+    itemHeight: rowHeight,
+    containerHeight,
+  });
 
   const onScroll = () => {
     if (tableContainerRef.current) {
@@ -74,11 +76,10 @@ function App() {
       <input
         type="text"
         placeholder="Search..."
-        value={searchQuery}
-        onChange={(e) => setSearchQuery(e.target.value)}
+        onChange={(e) => updateSearchQuery(e.target.value)}
         style={{ padding: "0.5rem", marginRight: "1rem" }}
       />
-      <select onChange={(e) => setSearchKey(e.target.value as keyof Ticket)}>
+      <select onChange={(e) => updateSearchKey(e.target.value as keyof Ticket)}>
         <>
           <option value="">All Columns</option>
           {Object.keys(tickets[0]).map((key) => (

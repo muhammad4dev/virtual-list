@@ -4,19 +4,17 @@ type VirtualizedListProps<T> = {
   items: T[];
   itemHeight: number;
   containerHeight: number;
-  searchQuery?: string;
-  searchKey?: keyof T;
 };
 
 export const useVirtualizedList = <T>({
   items,
   itemHeight,
   containerHeight,
-  searchQuery,
-  searchKey,
 }: VirtualizedListProps<T>) => {
   const [startIndex, setStartIndex] = useState(0);
   const [endIndex, setEndIndex] = useState(0);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchKey, setSearchKey] = useState<keyof T | undefined>(undefined);
 
   const totalVisibleItems = Math.ceil(containerHeight / itemHeight);
 
@@ -45,7 +43,7 @@ export const useVirtualizedList = <T>({
 
   useEffect(() => {
     setEndIndex(totalVisibleItems);
-  }, [containerHeight, itemHeight, totalVisibleItems]);
+  }, [containerHeight, itemHeight, totalVisibleItems, filteredItems]);
 
   const handleScroll = (scrollTop: number) => {
     const newStartIndex = Math.floor(scrollTop / itemHeight);
@@ -59,5 +57,22 @@ export const useVirtualizedList = <T>({
   const offsetBottom =
     (filteredItems.length - visibleItems.length) * itemHeight - offsetTop;
 
-  return { visibleItems, offsetTop, offsetBottom, handleScroll, filteredItems };
+  // Methods to update search parameters
+  const updateSearchQuery = (query: string) => {
+    setSearchQuery(query);
+  };
+
+  const updateSearchKey = (key: keyof T | undefined) => {
+    setSearchKey(key);
+  };
+
+  return {
+    visibleItems,
+    offsetTop,
+    offsetBottom,
+    filteredItems,
+    handleScroll,
+    updateSearchQuery,
+    updateSearchKey,
+  };
 };
