@@ -1,7 +1,9 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import "./App.css";
 import { useVirtualizedList } from "./hooks/useVirtualizedList";
 import tickets from "./utils/fakerData";
+
+type Ticket = (typeof tickets)[0];
 
 const tableStyles = {
   table: {
@@ -44,15 +46,21 @@ function SpacerRow({ height }: { height: number }) {
 }
 
 function App() {
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchKey, setSearchKey] = useState<keyof Ticket>();
+
   const rowHeight = 30;
   const containerHeight = 600;
 
   const tableContainerRef = useRef<HTMLDivElement>(null);
-  const { visibleItems, offsetTop, offsetBottom, handleScroll } =
+
+  const { visibleItems, offsetTop, offsetBottom, handleScroll, filteredItems } =
     useVirtualizedList({
       items: tickets,
       itemHeight: rowHeight,
       containerHeight,
+      searchQuery,
+      searchKey,
     });
 
   const onScroll = () => {
@@ -62,62 +70,84 @@ function App() {
   };
 
   return (
-    <div
-      ref={tableContainerRef}
-      onScroll={onScroll}
-      style={{
-        overflow: "auto",
-        height: containerHeight,
-        border: "1px solid #ccc",
-      }}
-    >
-      <table style={tableStyles.table as React.CSSProperties}>
-        <thead style={tableStyles.thead as React.CSSProperties}>
-          <tr>
-            {[
-              "Subject",
-              "Priority",
-              "Status",
-              "Description",
-              "Assigned To",
-              "Created At",
-            ].map((header) => (
-              <th key={header} style={tableStyles.th}>
-                {header}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {/* Spacer row to offset the top */}
-          <SpacerRow height={offsetTop} />
-          {visibleItems.map((ticket, index) => (
-            <tr
-              key={ticket.id}
-              style={{
-                ...tableStyles.tbodyTr,
-                ...(index % 2 === 0 ? tableStyles.tbodyTrEven : {}),
-              }}
-            >
+    <>
+      <input
+        type="text"
+        placeholder="Search..."
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
+        style={{ padding: "0.5rem", marginRight: "1rem" }}
+      />
+      <select onChange={(e) => setSearchKey(e.target.value as keyof Ticket)}>
+        <>
+          <option value="">All Columns</option>
+          {Object.keys(tickets[0]).map((key) => (
+            <option key={key} value={key}>
+              {" "}
+              {key}
+            </option>
+          ))}
+        </>
+      </select>
+
+      <div
+        ref={tableContainerRef}
+        onScroll={onScroll}
+        style={{
+          overflow: "auto",
+          height: containerHeight,
+          border: "1px solid #ccc",
+        }}
+      >
+        <table style={tableStyles.table as React.CSSProperties}>
+          <thead style={tableStyles.thead as React.CSSProperties}>
+            <tr>
               {[
-                ticket.subject,
-                ticket.priority,
-                ticket.status,
-                ticket.description,
-                ticket.assignedTo,
-                ticket.createdAt,
-              ].map((cell) => (
-                <td key={cell} style={tableStyles.td}>
-                  {cell}
-                </td>
+                "Subject",
+                "Priority",
+                "Status",
+                "Description",
+                "Assigned To",
+                "Created At",
+              ].map((header) => (
+                <th key={header} style={tableStyles.th}>
+                  {header}
+                </th>
               ))}
             </tr>
-          ))}
-          {/* Spacer row to offset the bottom */}
-          <SpacerRow height={offsetBottom} />
-        </tbody>
-      </table>
-    </div>
+          </thead>
+          <tbody>
+            {/* Spacer row to offset the top */}
+            <SpacerRow height={offsetTop} />
+            {visibleItems.map((ticket, index) => (
+              <tr
+                key={ticket.id}
+                style={{
+                  ...tableStyles.tbodyTr,
+                  ...(index % 2 === 0 ? tableStyles.tbodyTrEven : {}),
+                }}
+              >
+                {[
+                  ticket.subject,
+                  ticket.priority,
+                  ticket.status,
+                  ticket.description,
+                  ticket.assignedTo,
+                  ticket.createdAt,
+                ].map((cell) => (
+                  <td key={cell} style={tableStyles.td}>
+                    {cell}
+                  </td>
+                ))}
+              </tr>
+            ))}
+            {/* Spacer row to offset the bottom */}
+            <SpacerRow height={offsetBottom} />
+          </tbody>
+        </table>
+      </div>
+      <p>Total filtered items: {filteredItems.length}</p>
+    </>
   );
 }
 
